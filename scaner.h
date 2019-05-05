@@ -1,3 +1,5 @@
+//作者：IuSpet
+//作用：将c-源代码转化为token输出
 #ifndef Scaner_h
 #define Scaner_h
 #endif // !Scaner_h
@@ -5,7 +7,7 @@
 #pragma once
 
 
-extern constexpr int BUFFERLENGTH = 4096;
+
 class Scaner
 {
 private:
@@ -30,5 +32,4 @@ public:
 	bool IsLetter(const char c);
 	char GetNext();					//获取下一个字符
 	void Back();					//向前看完后回溯
-
 };
