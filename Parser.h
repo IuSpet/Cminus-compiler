@@ -4,6 +4,9 @@
 #ifndef Parser_h
 #define Parser_h
 #include"utlib.h"
+
+//extern const int BUFFERLENGTH;
+
 class Parser
 {
 public:
@@ -18,6 +21,7 @@ private:
 	std::list<std::list<std::string>> grammar2;		//去除左公因子后的文法
 	const char *grammar_file;
 	const char *token_file;
+
 	FILE* f;
 
 	void get_grammar();								//获取初始文法

@@ -1,5 +1,6 @@
 #include "scaner.h"
 
+
 void Scaner::GetToken()
 {
 	char ch;
