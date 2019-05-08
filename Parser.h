@@ -10,10 +10,11 @@
 class Parser
 {
 public:
-	Parser(const char *gf, const char *tf);
+	Parser();
 	void get_LL1_grammar();						//得到LL（1）文法
 	void Parse();
 	void print_grammar0();						//打印初始文法
+	void print_grammar1();
 
 private:
 	std::list<std::list<std::string>> grammar0;		//初始文法
