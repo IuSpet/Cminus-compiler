@@ -2,21 +2,24 @@
 
 const int BUFFERLENGTH = 4096;
 
+//构造函数指定文法文件和token文件
 Parser::Parser()
 {
 	grammar_file = "D://cminus//grammar.txt";
 	token_file = "D://cminus//token.txt";
 }
 
+//去除左递归、左公因子、计算FIRST、FOLLOW集合判断LL(1)文法
 void Parser::get_LL1_grammar()
 {
 }
 
+//解析token，构造语法树
 void Parser::Parse()
 {
 }
 
-
+//打印从文件中读取的文法检查
 void Parser::print_grammar0()
 {
 	std::ofstream outfile("D://cminus//grammar0.txt");
@@ -40,6 +43,7 @@ void Parser::print_grammar0()
 	outfile.close();
 }
 
+//打印去除左递归后的文法检查
 void Parser::print_grammar1()
 {
 	Eliminate_left_recursion();
@@ -136,8 +140,8 @@ void Parser::Eliminate_left_recursion()
 							for (; pB != B.end(); pB++)		//将production替换为B中的产生式
 							{
 								std::string newprd(item);
-								item.replace(0,Vn.length(), *pB);
-								A.insert(pA, item);		//加入替换后的产生式
+								newprd.replace(0,Vn.length(), *pB);
+								A.insert(pA, newprd);		//加入替换后的产生式
 							}
 							pA = A.begin(); 
 							break;
@@ -146,24 +150,6 @@ void Parser::Eliminate_left_recursion()
 						break;
 					}
 				}
-				/*
-				//最后一个产生式
-				if (Vn == tmp && pA != A.begin())				//该非终结符是前面的开始符号
-				{
-					//std::string prefix = production.substr(0,subbg);
-					//std::string suffix = production.substr(subend);						
-					pA = A.erase(pA);		//删除原产生式
-					auto pB = B.begin(); pB++;
-					for (; pB != B.end(); pB++)		//将production替换为B中的产生式
-					{
-						std::string newprd(item);
-						item.replace(subbg, sublength, *pB);
-						pA = A.insert(pA, item);		//加入替换后的产生式
-					}
-					pA = A.begin();
-					continue;
-				}
-				*/
 			}
 		}
 		//去除直接左递归
@@ -212,13 +198,14 @@ void Parser::Eliminate_left_recursion()
 			A1 -> αA1
 			*/
 			while (pA != A.end()) pA = A.erase(pA);		//清空A的产生式
-			//如果β是空的，直接改为 A -> αA
-			if (vs2.empty())
+			//如果β只有empty，直接改为 A -> αA | empty
+			if (vs2[0] == "empty")
 			{
 				for (std::string s : vs1)
 				{
 					A.push_back(s + ' ' + Vn);
 				}
+				A.push_back("empty");
 				continue;
 			}
 			std::string newprdt(Vn + '1');				//附加产生式
