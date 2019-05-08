@@ -105,11 +105,11 @@ void Parser::Eliminate_left_recursion()
 	//TO DO:消除grammar0里的左递归  
 	for (auto p = grammar0.begin(); p != grammar0.end(); p++)
 	{
+		std::list<std::string> &A = *p;			//文法A
 		//展开当前文法
 		for (auto j = grammar0.begin(); j != p ; j++)
 		{
-			//替换A产生式中的Vn
-			std::list<std::string> &A = *p;			//文法A
+			//替换A产生式中的Vn			
 			std::list<std::string> &B = *j;			//文法B
 			std::string &Vn = B.front();			//文法B的开头
 			auto pA = A.begin(); pA++;
@@ -119,13 +119,11 @@ void Parser::Eliminate_left_recursion()
 				std::string &production = *pA;		//文法A中的产生式
 				std::string item(production);
 				std::string tmp;					//提取production中的非终结符
-				int subbg = 0, sublength = 0;			//记录tmp出现的位置保留前缀后缀
 				for (char c:production)
 				{
 					if (c != ' ')
 					{
 						tmp.push_back(c);
-						sublength++;
 					}
 					else							//提取出了一个完整的非终结符
 					{
@@ -138,19 +136,17 @@ void Parser::Eliminate_left_recursion()
 							for (; pB != B.end(); pB++)		//将production替换为B中的产生式
 							{
 								std::string newprd(item);
-								item.replace(subbg, sublength, *pB);
-								pA = A.insert(pA, item);		//加入替换后的产生式
+								item.replace(0,Vn.length(), *pB);
+								A.insert(pA, item);		//加入替换后的产生式
 							}
 							pA = A.begin(); 
 							break;
 						}
 						//std::cout << tmp << std::endl;
-						subbg += sublength;
-						subbg++;
-						sublength = 0;
-						tmp.clear();
+						break;
 					}
 				}
+				/*
 				//最后一个产生式
 				if (Vn == tmp && pA != A.begin())				//该非终结符是前面的开始符号
 				{
@@ -167,10 +163,82 @@ void Parser::Eliminate_left_recursion()
 					pA = A.begin();
 					continue;
 				}
+				*/
 			}
 		}
 		//去除直接左递归
-
+		do
+		{
+			std::list<std::string>::iterator pA = A.begin();
+			auto Vn = *pA;
+			pA++;
+			/*
+			A -> Aα| β
+			vs1存α，vs2存β
+			*/
+			std::vector<std::string> vs1, vs2;
+			for (; pA != A.end(); pA++)
+			{
+				std::string &production = *pA;
+				std::string first;				//每个产生式的第一个字母判断分给α还是β
+				bool flag = true;
+				for (char c : production)
+				{
+					if (c == ' ')
+					{
+						if (first == Vn)		//是Aα
+						{
+							vs1.push_back(production.substr(Vn.length() + 1));
+						}
+						else					//是β
+						{
+							vs2.push_back(production);
+						}
+						flag = false;			//已经处理过当前产生式
+						break;
+					}
+					else
+					{
+						first.push_back(c);
+					}
+				}
+				if (flag) vs2.push_back(production);
+			}
+			if (vs1.empty()) continue;			//α是空的，即无左递归
+			pA = A.begin(); pA++;
+			/*
+			将A -> Aα| β改为
+			A -> βA1
+			A1 -> αA1
+			*/
+			while (pA != A.end()) pA = A.erase(pA);		//清空A的产生式
+			//如果β是空的，直接改为 A -> αA
+			if (vs2.empty())
+			{
+				for (std::string s : vs1)
+				{
+					A.push_back(s + ' ' + Vn);
+				}
+				continue;
+			}
+			std::string newprdt(Vn + '1');				//附加产生式
+			//βA1
+			for (std::string s : vs2)
+			{
+				A.push_back(s + ' ' + newprdt);
+			}
+			//A1 -> αA1
+			std::list<std::string> newgrammar;
+			newgrammar.push_back(newprdt);				//加入A1
+			for (std::string s : vs1)
+			{
+				newgrammar.push_back(s + ' ' + newprdt);
+			}
+			newgrammar.push_back("empty");
+			p++;
+			p = grammar0.insert(p, newgrammar);
+		} while (false);
+		
 	}
 }
 
