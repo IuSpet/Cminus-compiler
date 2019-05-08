@@ -1,20 +1,21 @@
+//作者：IuSpet
+//作用：将c-源代码转化为token输出
 #ifndef Scaner_h
 #define Scaner_h
-#endif // !Scaner_h
 #include"utlib.h"
-#pragma once
 
+//extern const int BUFFERLENGTH;
 
-extern constexpr int BUFFERLENGTH = 4096;
 class Scaner
 {
 private:
-	char buffer[BUFFERLENGTH];		//读入源程序的缓冲区
+	char buffer[4096];		//读入源程序的缓冲区
 	int pos;						//缓冲区位置
-	FILE* source;	
+	FILE* source;
 	int syn;						//token类别
 	int state;
 	int tsss;
+	const int BUFFERLENGTH = 4096;
 public:
 	Scaner(const char* s)
 	{
@@ -24,11 +25,15 @@ public:
 		syn = -1;
 		state = 0;
 		fgets(buffer, BUFFERLENGTH, source);
+		
 	}
 	void GetToken();
 	bool IsNum(const char c);
 	bool IsLetter(const char c);
 	char GetNext();					//获取下一个字符
 	void Back();					//向前看完后回溯
-
 };
+
+
+#endif // !Scaner_h
+#pragma once
