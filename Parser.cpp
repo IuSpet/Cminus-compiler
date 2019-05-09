@@ -26,7 +26,7 @@ void Parser::print_grammar0()
 	//outfile.open("D://cminus//grammar0.txt", std::ios::out, 0);		//文件输出流指向保存grammar0的文件
 	
 	get_grammar();
-	for (auto l : grammar0)
+	for (auto l : grammar)
 	{
 		bool first = true;
 		for (auto t : l)
@@ -49,7 +49,7 @@ void Parser::print_grammar1()
 	Eliminate_left_recursion();
 	std::ofstream outfile("D://cminus//grammar1.txt");
 
-	for (auto l : grammar0)
+	for (auto l : grammar)
 	{
 		bool first = true;
 		for (auto t : l)
@@ -64,6 +64,36 @@ void Parser::print_grammar1()
 		outfile << std::endl << std::endl;
 	}
 	outfile.close();
+}
+
+void Parser::print_grammar2()
+{
+	get_left_common_factor();
+	std::ofstream outfile("D://cminus//grammar2.txt");
+
+	for (auto l : grammar)
+	{
+		bool first = true;
+		for (auto t : l)
+		{
+			if (first)
+			{
+				outfile << t << " -> ";
+				first = false;
+			}
+			else outfile << t << " | ";
+		}
+		outfile << std::endl << std::endl;
+	}
+	outfile.close();
+}
+
+void Parser::print_FIRST()
+{
+}
+
+void Parser::print_FOLLOW()
+{
 }
 
 //读取原始文法，保存到内存中
@@ -99,19 +129,19 @@ void Parser::get_grammar()
 		}
 		while (str.back() == ' ' || str.back() == '\n') str.pop_back();
 		tmp.push_back(str);
-		grammar0.push_back(tmp);
+		grammar.push_back(tmp);
 	}
 }
 
 //消除左递归
 void Parser::Eliminate_left_recursion()
 {
-	//TO DO:消除grammar0里的左递归  
-	for (auto p = grammar0.begin(); p != grammar0.end(); p++)
+	//TO DO:消除grammar里的左递归  
+	for (auto p = grammar.begin(); p != grammar.end(); p++)
 	{
 		std::list<std::string> &A = *p;			//文法A
 		//展开当前文法
-		for (auto j = grammar0.begin(); j != p ; j++)
+		for (auto j = grammar.begin(); j != p ; j++)
 		{
 			//替换A产生式中的Vn			
 			std::list<std::string> &B = *j;			//文法B
@@ -223,12 +253,118 @@ void Parser::Eliminate_left_recursion()
 			}
 			newgrammar.push_back("empty");
 			p++;
-			p = grammar0.insert(p, newgrammar);
+			p = grammar.insert(p, newgrammar);
 		} while (false);
 		
 	}
 }
 
+//获取FIRST集合
+void Parser::get_FIRST()
+{
+}
+
+//获取FOLLOW集合
+void Parser::get_FOLLOW()
+{
+}
+
+//判断是不是LL(1)文法
+bool Parser::judge_LL1_grammar()
+{
+	return false;
+}
+
+//计算预测分析表
+void Parser::get_predict_table()
+{
+}
+
+//提取左公因子
+void Parser::get_left_common_factor()
+{
+	//遍历所有文法规则
+	for (auto p = grammar.begin(); p != grammar.end(); p++)
+	{	
+		auto &A = *p;
+		if (A.size() == 2) continue;	//只有一个产生式
+		auto it = A.begin(); it++;
+		std::string common_factor(*it);
+		//遍历从第二个开始的每个产生式
+		for (; it != A.end(); it++)
+		{
+			const auto &production = *it;
+			if (production == common_factor) continue;
+			bool flag = false;			//有无公因子
+			for (int i = production.length() - 1; i >= 0; i--)
+			{
+				//到空格，比较前面的产生式和已提取的公因子
+				if (production[i] == ' ')
+				{
+					std::string prefix_production = production.substr(0, i);
+					//将公因子截取为和当前子串长度相同
+					common_factor = common_factor.substr(0, i);
+					//前缀和已提取的公因子相同，比较下一个产生式
+					if (common_factor == prefix_production)
+					{
+						flag = true;
+						break;
+					}
+					else continue;
+				}
+			}
+			//没有公因子
+			if (!flag)
+			{
+				common_factor.clear();
+				break;
+			}
+		}
+		/*
+		有公因子
+		将A -> αB | αC 转化为
+		A -> αA_2
+		A_2 -> B | C
+		*/
+		if (common_factor.length())
+		{
+			//提取公因子外的其他产生式
+			std::vector<std::string> left_factor;
+			it = A.begin(); it++;
+			for (; it != A.end(); it++)
+			{
+				if (it->length() == common_factor.length())
+				{
+					left_factor.push_back("empty");
+				}
+				else
+				{
+					std::string left_production = it->substr(common_factor.length() + 1);		//+1吞空格
+					left_factor.push_back(left_production);
+				}
+				
+			}			
+			std::list<std::string> newgrammar;
+			std::string Vn = *A.begin();
+			std::string newVn(Vn + "_2");
+			newgrammar.push_back(Vn);
+			newgrammar.push_back(common_factor + ' ' + newVn);
+			p = grammar.erase(p);
+			//将A -> αA_2插入文法列表
+			grammar.insert(p, newgrammar);
+			newgrammar.clear();
+			newgrammar.push_back(newVn);
+			for (auto factor : left_factor)
+			{
+				newgrammar.push_back(factor);
+			}
+			//将A_2 -> B | C插入文法列表
+			p = grammar.insert(p, newgrammar);
+		}
+	}
+}
+
+//不断获取下一个token建立语法树
 std::string Parser::get_next_token()
 {
 	return std::string();
