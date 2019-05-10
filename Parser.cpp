@@ -9,9 +9,13 @@ Parser::Parser()
 	token_file = "D://cminus//token.txt";
 }
 
-//去除左递归、左公因子、计算FIRST、FOLLOW集合判断LL(1)文法
 void Parser::get_LL1_grammar()
 {
+	get_grammar();
+	Eliminate_left_recursion();
+	get_left_common_factor();
+	get_all_Vn();
+	mark_empty();
 }
 
 //解析token，构造语法树
@@ -19,17 +23,14 @@ void Parser::Parse()
 {
 }
 
-//打印从文件中读取的文法检查
+//打印从文件中读取的文法
 void Parser::print_grammar0()
 {
 	std::ofstream outfile("D://cminus//grammar0.txt");
-	//outfile.open("D://cminus//grammar0.txt", std::ios::out, 0);		//文件输出流指向保存grammar0的文件
-	
-	get_grammar();
-	for (auto l : grammar)
+	for (const auto &l : grammar)
 	{
 		bool first = true;
-		for (auto t : l)
+		for (const auto &t : l)
 		{
 			if (first)
 			{
@@ -43,16 +44,14 @@ void Parser::print_grammar0()
 	outfile.close();
 }
 
-//打印去除左递归后的文法检查
+//打印去除左递归后的文法
 void Parser::print_grammar1()
 {
-	Eliminate_left_recursion();
 	std::ofstream outfile("D://cminus//grammar1.txt");
-
-	for (auto l : grammar)
+	for (const auto &l : grammar)
 	{
 		bool first = true;
-		for (auto t : l)
+		for (const auto &t : l)
 		{
 			if (first)
 			{
@@ -66,15 +65,15 @@ void Parser::print_grammar1()
 	outfile.close();
 }
 
+//打印提取公因子后的文法
 void Parser::print_grammar2()
 {
-	get_left_common_factor();
 	std::ofstream outfile("D://cminus//grammar2.txt");
 
-	for (auto l : grammar)
+	for (const auto &l : grammar)
 	{
 		bool first = true;
-		for (auto t : l)
+		for (const auto &t : l)
 		{
 			if (first)
 			{
@@ -84,6 +83,19 @@ void Parser::print_grammar2()
 			else outfile << t << " | ";
 		}
 		outfile << std::endl << std::endl;
+	}
+	outfile.close();
+}
+
+void Parser::print_empty()
+{
+	std::ofstream outfile("D://cminus//empty.txt");
+	for (const auto &gm : grammar)
+	{
+		const std::string &Vn = *gm.begin();
+		outfile << Vn << "  ";
+		if (can_produce_empty[Vn]) outfile << "empty" << std::endl;
+		else outfile << "no empty" << std::endl;
 	}
 	outfile.close();
 }
@@ -91,7 +103,7 @@ void Parser::print_grammar2()
 void Parser::print_FIRST()
 {
 }
-
+std::list<std::list<std::vector<std::string>>> aaa;
 void Parser::print_FOLLOW()
 {
 }
@@ -238,7 +250,7 @@ void Parser::Eliminate_left_recursion()
 				A.push_back("empty");
 				continue;
 			}
-			std::string newprdt(Vn + '1');				//附加产生式
+			std::string newprdt(Vn + "_1");				//附加产生式
 			//βA1
 			for (std::string s : vs2)
 			{
@@ -272,6 +284,7 @@ void Parser::get_FOLLOW()
 //判断是不是LL(1)文法
 bool Parser::judge_LL1_grammar()
 {
+	
 	return false;
 }
 
@@ -363,6 +376,51 @@ void Parser::get_left_common_factor()
 		}
 	}
 }
+
+//标记所有非终结符与终结符
+void Parser::get_all_Vn()
+{
+	//往map中加入所有终结符与非终结符
+	for (auto gm : grammar)
+	{
+		for (auto V : gm)
+		{
+			is_Vn[V] = false;
+		}
+	}
+	//将非终结符标记为true
+	for (auto gm : grammar)
+	{
+		is_Vn[*gm.begin()] = true;
+	}
+}
+
+//标记能产生empty的文法
+void Parser::mark_empty()
+{
+	for (auto &gm : grammar)
+	{
+		auto it = gm.begin();
+		auto &Vn = *it;
+		it++;
+		can_produce_empty[Vn] = false;
+		for (; it != gm.end(); it++)
+		{
+			if (*it == "empty")
+			{
+				can_produce_empty[Vn] = true;
+				break;
+			}
+		}
+	}
+}
+
+//换个数据结构，方便后面使用
+void Parser::reconsitution()
+{
+
+}
+
 
 //不断获取下一个token建立语法树
 std::string Parser::get_next_token()
