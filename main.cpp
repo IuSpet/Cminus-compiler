@@ -8,10 +8,7 @@ int main()
 	//s1.GetToken();
 	Parser p1;
 	p1.get_LL1_grammar();
-	p1.print_grammar0();
-	p1.print_grammar1();
-	p1.print_grammar2();
-	p1.print_empty();
+	p1.test_print();
 	//system("pause");
 	return 0;
 }

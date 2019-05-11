@@ -16,11 +16,21 @@ void Parser::get_LL1_grammar()
 	get_left_common_factor();
 	get_all_Vn();
 	mark_empty();
+	reconsitution();
 }
 
 //解析token，构造语法树
 void Parser::Parse()
 {
+}
+
+void Parser::test_print()
+{
+	print_grammar0();
+	print_grammar1();
+	print_grammar2();
+	print_empty();
+	print_final_grammar();
 }
 
 //打印从文件中读取的文法
@@ -87,23 +97,43 @@ void Parser::print_grammar2()
 	outfile.close();
 }
 
+void Parser::print_final_grammar()
+{
+	std::ofstream outfile("D://cminus//ll(1)grammar.txt");
+	for (auto &gm : final_grammar)
+	{
+		outfile << gm[0][0] << " -> ";
+		for (int i = 1; i < gm.size(); i++)
+		{
+			for (int j = 0; j < gm[i].size(); j++)
+			{
+				outfile << gm[i][j] << " ";
+			}
+			outfile << "| ";
+		}
+		outfile << std::endl << std::endl;
+	}
+	outfile.close();
+}
+
+//打印能产生empty的文法
 void Parser::print_empty()
 {
 	std::ofstream outfile("D://cminus//empty.txt");
 	for (const auto &gm : grammar)
 	{
 		const std::string &Vn = *gm.begin();
-		outfile << Vn << "  ";
-		if (can_produce_empty[Vn]) outfile << "empty" << std::endl;
-		else outfile << "no empty" << std::endl;
+		if (can_produce_empty[Vn]) outfile << Vn << std::endl;
+		else continue;
 	}
 	outfile.close();
 }
 
+//打印各个文法的FIRST集合
 void Parser::print_FIRST()
 {
 }
-std::list<std::list<std::vector<std::string>>> aaa;
+
 void Parser::print_FOLLOW()
 {
 }
@@ -415,10 +445,36 @@ void Parser::mark_empty()
 	}
 }
 
-//换个数据结构，方便后面使用
+//文法不再改变，换个数据结构，方便后面使用
 void Parser::reconsitution()
 {
-
+	std::vector<std::vector<std::string>> tmp;
+	for (auto &gm : grammar)
+	{
+		tmp.clear();
+		std::vector<std::string> vs;
+		for (auto &pro : gm)
+		{
+			vs.clear();
+			std::string sub;
+			for (auto &c : pro)
+			{
+				if (c == ' ')
+				{
+					vs.push_back(sub);
+					sub.clear();
+				}
+				else
+				{
+					sub.push_back(c);
+				}
+			}
+			vs.push_back(sub);
+			tmp.push_back(vs);
+		}
+		final_grammar.push_back(tmp);
+	}
+	//grammar.clear();
 }
 
 

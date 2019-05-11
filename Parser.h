@@ -14,15 +14,11 @@ public:
 	//去除左递归、左公因子、计算FIRST、FOLLOW集合判断LL(1)文法
 	void get_LL1_grammar();						//得到LL（1）文法
 	void Parse();
-	void print_grammar0();						//打印初始文法
-	void print_grammar1();						//打印去除左递归后的文法
-	void print_grammar2();						//打印提取左公因子后的文法
-	void print_empty();							//打印各个非终结符能否产生empty
-	void print_FIRST();
-	void print_FOLLOW();
+	void test_print();
+	
 private:
 	std::list<std::list<std::string>> grammar;		//文法	
-	std::list<std::list<std::vector<std::string>>> final_grammar;	//处理后的LL(1)文法
+	std::vector<std::vector<std::vector<std::string>>> final_grammar;	//处理后的LL(1)文法
 	std::map<std::string, bool> can_produce_empty;
 	std::map<std::string, bool> is_Vn;
 	const char *grammar_file;
@@ -40,6 +36,13 @@ private:
 	void mark_empty();								//标记能产生empty的文法
 	void reconsitution();							//换个方便的数据结构。。。
 	std::string get_next_token();					//不断获得下一个token
+	void print_grammar0();						//打印初始文法
+	void print_grammar1();						//打印去除左递归后的文法
+	void print_grammar2();						//打印提取左公因子后的文法
+	void print_final_grammar();					//打印重构后的文法，测试
+	void print_empty();							//打印各个非终结符能否产生empty
+	void print_FIRST();
+	void print_FOLLOW();
 };
 #endif // !Parser_h
 #pragma once
