@@ -17,6 +17,7 @@ void Parser::get_LL1_grammar()
 	get_all_Vn();
 	mark_empty();
 	reconsitution();
+	get_FIRST();
 }
 
 //解析token，构造语法树
@@ -31,6 +32,7 @@ void Parser::test_print()
 	print_grammar2();
 	print_empty();
 	print_final_grammar();
+	print_FIRST();
 }
 
 //打印从文件中读取的文法
@@ -132,6 +134,16 @@ void Parser::print_empty()
 //打印各个文法的FIRST集合
 void Parser::print_FIRST()
 {
+	std::ofstream outfile("D://cminus//FIRST.txt");
+	for (const auto &fst : FIRST)
+	{
+		outfile << fst.first << " : { ";
+		for (const auto &str : fst.second)
+		{
+			outfile << str << "| ";
+		}
+		outfile << "}"<<std::endl << std::endl;
+	}
 }
 
 void Parser::print_FOLLOW()
@@ -304,6 +316,61 @@ void Parser::Eliminate_left_recursion()
 //获取FIRST集合
 void Parser::get_FIRST()
 {
+	for (auto &gm : final_grammar)
+	{
+		std::string &Vn = gm[0][0];
+		std::set<std::string> first;
+		cal_first(first, Vn);
+		FIRST[Vn] = first;
+		first.clear();
+	}
+}
+
+//递归计算当前非终结符的fist集合
+void Parser::cal_first(std::set<std::string>& fst, std::string Vn)
+{
+	for (auto &gm : final_grammar)
+	{
+		if (gm[0][0] == Vn)
+		{
+			//每个产生式的FIRST集合
+			for (int j = 1; j < gm.size(); j++)
+			{
+				auto &pro = gm[j];
+				//从每个产生式的第一个非终结符开始计算FISRST，如果里面有empty，再计算下一个，若最后一个也有empty，将empty加入FIRST集合
+				for (int i = 0; i < pro.size(); i++)
+				{
+					//判断是不是非终结符
+					if (is_Vn[pro[i]])
+					{
+						cal_first(fst, pro[i]);
+						if (can_produce_empty[pro[i]])
+						{
+							if (i == pro.size() - 1)
+							{
+								fst.insert("empty");
+								break;
+							}
+							else continue;
+						}
+						else break;
+					}
+					else
+					{
+						if (pro[i] != "empty")
+						{
+							fst.insert(pro[i]);
+							break;
+						}
+						else if (i == 0)
+						{
+							fst.insert("empty");
+						}
+					}
+				}
+			}
+		}
+	}
 }
 
 //获取FOLLOW集合

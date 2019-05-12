@@ -11,7 +11,7 @@ class Parser
 {
 public:
 	Parser();
-	//去除左递归、左公因子、计算FIRST、FOLLOW集合判断LL(1)文法
+	
 	void get_LL1_grammar();						//得到LL（1）文法
 	void Parse();
 	void test_print();
@@ -21,6 +21,7 @@ private:
 	std::vector<std::vector<std::vector<std::string>>> final_grammar;	//处理后的LL(1)文法
 	std::map<std::string, bool> can_produce_empty;
 	std::map<std::string, bool> is_Vn;
+	std::map<std::string, std::set<std::string>> FIRST, FOLLOW;
 	const char *grammar_file;
 	const char *token_file;
 	FILE* f;
@@ -41,6 +42,7 @@ private:
 	void print_grammar2();						//打印提取左公因子后的文法
 	void print_final_grammar();					//打印重构后的文法，测试
 	void print_empty();							//打印各个非终结符能否产生empty
+	void cal_first(std::set<std::string> &fst, std::string Vn);
 	void print_FIRST();
 	void print_FOLLOW();
 };
