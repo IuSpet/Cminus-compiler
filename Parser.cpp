@@ -18,6 +18,7 @@ void Parser::get_LL1_grammar()
 	mark_empty();
 	reconsitution();
 	get_FIRST();
+	get_FOLLOW();
 }
 
 //解析token，构造语法树
@@ -33,6 +34,7 @@ void Parser::test_print()
 	print_empty();
 	print_final_grammar();
 	print_FIRST();
+	print_FOLLOW();
 }
 
 //打印从文件中读取的文法
@@ -144,10 +146,23 @@ void Parser::print_FIRST()
 		}
 		outfile << "}"<<std::endl << std::endl;
 	}
+	outfile.close();
 }
 
 void Parser::print_FOLLOW()
 {
+	std::ofstream outfile("D://cminus//FOLLOW.txt");
+	for (const auto &gm : final_grammar)
+	{
+		const auto &Vn = gm[0][0];
+		outfile << Vn << " :{ ";
+		for (auto &str : FOLLOW[Vn])
+		{
+			outfile << str << " | ";
+		}
+		outfile << "}" << std::endl << std::endl;
+	}
+	outfile.close();
 }
 
 //读取原始文法，保存到内存中
@@ -319,16 +334,17 @@ void Parser::get_FIRST()
 	for (auto &gm : final_grammar)
 	{
 		std::string &Vn = gm[0][0];
-		std::set<std::string> first;
-		cal_first(first, Vn);
-		FIRST[Vn] = first;
-		first.clear();
+		if (FIRST[Vn].empty())
+		{
+			FIRST[Vn] = cal_first(Vn);
+		}
 	}
 }
 
 //递归计算当前非终结符的fist集合
-void Parser::cal_first(std::set<std::string>& fst, std::string Vn)
+std::set<std::string> Parser::cal_first(std::string Vn)
 {
+	std::set<std::string> res;
 	for (auto &gm : final_grammar)
 	{
 		if (gm[0][0] == Vn)
@@ -343,12 +359,13 @@ void Parser::cal_first(std::set<std::string>& fst, std::string Vn)
 					//判断是不是非终结符
 					if (is_Vn[pro[i]])
 					{
-						cal_first(fst, pro[i]);
-						if (can_produce_empty[pro[i]])
+						FIRST[pro[i]] = cal_first(pro[i]);
+						res.insert(FIRST[pro[i]].begin(), FIRST[pro[i]].end());
+						if (FIRST[pro[i]].find("empty") != FIRST[pro[i]].end())
 						{
 							if (i == pro.size() - 1)
 							{
-								fst.insert("empty");
+								res.insert("empty");
 								break;
 							}
 							else continue;
@@ -359,23 +376,85 @@ void Parser::cal_first(std::set<std::string>& fst, std::string Vn)
 					{
 						if (pro[i] != "empty")
 						{
-							fst.insert(pro[i]);
-							break;
+							res.insert(pro[i]);
 						}
+						//产生式只有一个empty的情况
 						else if (i == 0)
 						{
-							fst.insert("empty");
+							res.insert("empty");
+						}
+						break;
+					}
+				}
+			}
+			break;
+		}
+	}
+	return res;
+}
+
+//获取FOLLOW集合
+void Parser::get_FOLLOW()
+{
+	FOLLOW[final_grammar[0][0][0]].insert("$");
+	int t = final_grammar.size();
+	while (t--)
+	{
+		for (auto &gm : final_grammar)
+		{
+			/*
+			对于每条文法规则，不断寻找A -> αBβ结构，
+			将FIRST(β)中除empty外的所有符号加入FOLLOW(B)
+			*/
+			auto p = gm.begin(); p++;
+			for (; p != gm.end(); p++)
+			{
+				auto &pro = *p;
+				/*
+				标记该符号后面的部分能否产生empty
+				从而判断是否应用规则：对于A -> αBβ
+				将FOLLOW(A)中的符号加入FOLLOW(B)中
+				flag为true时是应用，false时是不应用
+				*/
+				bool flag = true;
+				//从后往前判断每个文法，不能产生empty时将flag改为false
+				for (int i = pro.size() - 1; i >= 0; i--)
+				{
+					//判断是否是非终结符
+					if (is_Vn[pro[i]])
+					{
+						//将后半部分first加入follow
+						for (int j = i + 1; j < pro.size(); j++)
+						{
+							if (is_Vn[pro[j]])
+							{
+								FOLLOW[pro[i]].insert(FIRST[pro[j]].begin(), FIRST[pro[j]].end());
+								if (FIRST[pro[j]].find("empty") == FIRST[pro[j]].end()) break;
+							}
+							else
+							{
+								FOLLOW[pro[i]].insert(pro[j]);
+								break;
+							}
+						}
+						if (flag)
+						{
+							//因为gm[0][0]的follow集合可能不全，故需要反复调用该函数补全各个集合
+							FOLLOW[pro[i]].insert(FOLLOW[gm[0][0]].begin(), FOLLOW[gm[0][0]].end());
+							if (FIRST[pro[i]].find("empty") == FIRST[pro[i]].end()) flag = false;
 						}
 					}
 				}
 			}
 		}
 	}
-}
-
-//获取FOLLOW集合
-void Parser::get_FOLLOW()
-{
+	//FOLLOW集合没有empty
+	for (auto &gm : final_grammar)
+	{
+		auto &Vn = gm[0][0];
+		auto p = FOLLOW[Vn].find("empty");
+		if (p != FOLLOW[Vn].end()) FOLLOW[Vn].erase(p);
+	}
 }
 
 //判断是不是LL(1)文法

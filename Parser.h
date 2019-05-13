@@ -42,7 +42,7 @@ private:
 	void print_grammar2();						//打印提取左公因子后的文法
 	void print_final_grammar();					//打印重构后的文法，测试
 	void print_empty();							//打印各个非终结符能否产生empty
-	void cal_first(std::set<std::string> &fst, std::string Vn);
+	std::set<std::string> cal_first(std::string Vn);
 	void print_FIRST();
 	void print_FOLLOW();
 };
