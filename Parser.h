@@ -31,6 +31,7 @@ private:
 	void get_FIRST();								//获取FIRST集合
 	void get_FOLLOW();								//获取FOLLOW集合
 	bool judge_LL1_grammar();						//判断是不是LL(1)文法
+	bool cmp_set(const std::set<std::string> s1, const std::set<std::string> s2);	//判断两个set是否有交集
 	void get_predict_table();						//计算预测分析表
 	void get_left_common_factor();					//提取左公因子
 	void get_all_Vn();								//找出所有非终结符

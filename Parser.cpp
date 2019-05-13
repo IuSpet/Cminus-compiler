@@ -1,5 +1,5 @@
 #include "Parser.h"
-
+#include<assert.h>
 const int BUFFERLENGTH = 4096;
 
 //构造函数指定文法文件和token文件
@@ -19,6 +19,16 @@ void Parser::get_LL1_grammar()
 	reconsitution();
 	get_FIRST();
 	get_FOLLOW();
+	if (!judge_LL1_grammar())
+	{
+		std::cout << "不是LL(1)文法" << std::endl;
+		system("pause");
+	}
+	else
+	{
+		std::cout << "是LL(1)文法" << std::endl;
+		system("pause");
+	}
 }
 
 //解析token，构造语法树
@@ -137,10 +147,10 @@ void Parser::print_empty()
 void Parser::print_FIRST()
 {
 	std::ofstream outfile("D://cminus//FIRST.txt");
-	for (const auto &fst : FIRST)
+	for (const auto &gm : final_grammar)
 	{
-		outfile << fst.first << " : { ";
-		for (const auto &str : fst.second)
+		outfile << gm[0][0] << " : { ";
+		for (const auto &str : FIRST[gm[0][0]])
 		{
 			outfile << str << "| ";
 		}
@@ -460,8 +470,68 @@ void Parser::get_FOLLOW()
 //判断是不是LL(1)文法
 bool Parser::judge_LL1_grammar()
 {
-	
-	return false;
+	bool res = true;
+	for (auto &gm : final_grammar)
+	{
+		auto &Vn = gm[0][0];
+		bool flag = false;
+		//first(Vn)里有empty，需要比较follow(Vn)与first(A)，A是first集里没有empty的产生式
+		if (FIRST[Vn].find("empty") != FIRST[Vn].end())
+		{
+			flag = true;
+		}
+		for (int i = 1; i < gm.size(); i++)
+		{
+			std::set<std::string> s1;
+			for (auto &v : gm[i])
+			{
+				if (is_Vn[v])
+				{
+					s1.insert(FIRST[v].begin(), FIRST[v].end());
+					if (FIRST[v].find("empty") == FIRST[v].end()) break;
+				}
+				else
+				{
+					s1.insert(v);
+					break;
+				}
+			}
+			if (flag && s1.find("empty") != s1.end()) res &= cmp_set(s1, FOLLOW[Vn]);
+			for (int j = i + 1; j < gm.size(); j++)
+			{
+				std::set<std::string> s2;
+				for (auto &v : gm[j])
+				{
+					if (is_Vn[v])
+					{
+						s2.insert(FIRST[v].begin(), FIRST[v].end());
+						if (FIRST[v].find("empty") == FIRST[v].end()) break;
+					}
+					else
+					{
+						s2.insert(v);
+						break;
+					}
+				}
+				res &= cmp_set(s1, s2);
+			}
+		}
+	}
+	return res;
+}
+
+bool Parser::cmp_set(const std::set<std::string> s1, const std::set<std::string> s2)
+{
+	int l1 = s1.size();
+	int l2 = s2.size();
+	std::set<std::string> s;
+	s.insert(s1.begin(), s1.end());
+	s.insert(s2.begin(), s2.end());
+	int l = s.size();
+	if (l1 + l2 != l) {
+		std::cout << "error" << std::endl;
+	}
+	return (l1 + l2) == l;
 }
 
 //计算预测分析表
@@ -472,85 +542,7 @@ void Parser::get_predict_table()
 //提取左公因子
 void Parser::get_left_common_factor()
 {
-	//遍历所有文法规则
-	for (auto p = grammar.begin(); p != grammar.end(); p++)
-	{	
-		auto &A = *p;
-		if (A.size() == 2) continue;	//只有一个产生式
-		auto it = A.begin(); it++;
-		std::string common_factor(*it);
-		//遍历从第二个开始的每个产生式
-		for (; it != A.end(); it++)
-		{
-			const auto &production = *it;
-			if (production == common_factor) continue;
-			bool flag = false;			//有无公因子
-			for (int i = production.length() - 1; i >= 0; i--)
-			{
-				//到空格，比较前面的产生式和已提取的公因子
-				if (production[i] == ' ')
-				{
-					std::string prefix_production = production.substr(0, i);
-					//将公因子截取为和当前子串长度相同
-					common_factor = common_factor.substr(0, i);
-					//前缀和已提取的公因子相同，比较下一个产生式
-					if (common_factor == prefix_production)
-					{
-						flag = true;
-						break;
-					}
-					else continue;
-				}
-			}
-			//没有公因子
-			if (!flag)
-			{
-				common_factor.clear();
-				break;
-			}
-		}
-		/*
-		有公因子
-		将A -> αB | αC 转化为
-		A -> αA_2
-		A_2 -> B | C
-		*/
-		if (common_factor.length())
-		{
-			//提取公因子外的其他产生式
-			std::vector<std::string> left_factor;
-			it = A.begin(); it++;
-			for (; it != A.end(); it++)
-			{
-				if (it->length() == common_factor.length())
-				{
-					left_factor.push_back("empty");
-				}
-				else
-				{
-					std::string left_production = it->substr(common_factor.length() + 1);		//+1吞空格
-					left_factor.push_back(left_production);
-				}
-				
-			}			
-			std::list<std::string> newgrammar;
-			std::string Vn = *A.begin();
-			std::string newVn(Vn + "_2");
-			newgrammar.push_back(Vn);
-			newgrammar.push_back(common_factor + ' ' + newVn);
-			p = grammar.erase(p);
-			//将A -> αA_2插入文法列表
-			grammar.insert(p, newgrammar);
-			newgrammar.clear();
-			newgrammar.push_back(newVn);
-			for (auto factor : left_factor)
-			{
-				newgrammar.push_back(factor);
-			}
-			//将A_2 -> B | C插入文法列表
-			p = grammar.insert(p, newgrammar);
-		}
-	}
+	
 }
 
 //标记所有非终结符与终结符
