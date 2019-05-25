@@ -11,14 +11,21 @@ Parser::Parser()
 
 void Parser::get_LL1_grammar()
 {
-	get_grammar();
-	Eliminate_left_recursion();
-	get_left_common_factor();
-	get_all_Vn();
-	mark_empty();
-	reconsitution();
-	get_FIRST();
-	get_FOLLOW();
+	get_grammar();						//读文法
+	print_grammar0();
+	Eliminate_left_recursion();			//去左递归
+	print_grammar1();
+	get_all_Vn();						//标记所有非终结符
+	mark_empty();						//标记所有能产生空的产生式
+	print_empty();
+	get_left_common_factor();			//消除左公因子
+	print_grammar2();
+	reconsitution();					//重构存储文法的数据结构
+	print_final_grammar();
+	get_FIRST();						//计算FIRST集合
+	print_FIRST();
+	get_FOLLOW();						//计算FOLLOW集合
+	print_FOLLOW();
 	if (!judge_LL1_grammar())
 	{
 		std::cout << "不是LL(1)文法" << std::endl;
@@ -34,17 +41,6 @@ void Parser::get_LL1_grammar()
 //解析token，构造语法树
 void Parser::Parse()
 {
-}
-
-void Parser::test_print()
-{
-	print_grammar0();
-	print_grammar1();
-	print_grammar2();
-	print_empty();
-	print_final_grammar();
-	print_FIRST();
-	print_FOLLOW();
 }
 
 //打印从文件中读取的文法
@@ -174,6 +170,117 @@ void Parser::print_FOLLOW()
 	}
 	outfile.close();
 }
+
+void Parser::string_to_vector(std::string & s, std::vector<std::string>& v)
+{
+	std::string tmp;
+	for (auto &c : s)
+	{
+		if (c == ' ')
+		{
+			v.push_back(tmp);
+			tmp.clear();
+		}
+		else
+		{
+			tmp.push_back(c);
+		}
+	}
+	if (tmp.length()) v.push_back(tmp);
+}
+
+void Parser::vector_to_string(std::string & s, std::vector<std::string>& v)
+{
+	for (int i = 0; i < v.size(); i++)
+	{
+		if (v[i] == "") continue;
+		s += v[i];
+		if (i != v.size() - 1)
+		{
+			s.push_back(' ');
+		}
+	}
+}
+
+//计算两个文法产生式产生能识别的公共终结符
+std::string Parser::common_prefix(std::string & gm1, std::string & gm2)
+{
+	std::vector<std::string> pro1, pro2;
+	string_to_vector(gm1, pro1);
+	string_to_vector(gm2, pro2);
+	std::string common_fact;
+
+	return std::string();
+}
+
+//判断两个产生式有没有左公因子
+bool Parser::has_common_prefix(std::vector<std::string>& gm1, std::vector<std::string>& gm2)
+{
+	std::set<std::string> S, s1, s2;
+	s1 = get_left(gm1);
+	s2 = get_left(gm2);
+	S.insert(s1.begin(), s1.end());
+	S.insert(s2.begin(), s2.end());
+	return s1.size() + s2.size() != S.size();
+}
+
+//返回产生式的first集，查找左公因子用
+std::set<std::string> Parser::get_left(std::vector<std::string> & tmp)
+{
+	std::set<std::string> res;
+	if (tmp.size() == 0)
+	{
+		return res;
+	}
+	int i = 0;
+	do
+	{
+		if (is_Vn[tmp[i]])
+		{
+			for (auto &gm : grammar)
+			{
+				auto p = gm.begin();
+				if (tmp[i] == *p)
+				{
+					for (p++; p != gm.end(); p++)
+					{
+						std::vector<std::string> vs;
+						string_to_vector(*p, vs);
+						auto s = get_left(vs);
+						res.insert(s.begin(), s.end());
+					}
+					break;
+				}
+			}
+		}
+		else
+		{
+			res.insert(tmp[i]);
+		}
+		if (i == tmp.size() - 1 && can_produce_empty[tmp[i]])
+		{
+			res.insert("empty");
+			break;
+		}
+	} while (can_produce_empty[tmp[i++]]);
+	return res;
+}
+
+ 
+
+//将产生式中的第一个非终结符扩展为终结符，出现 | 往list中加入新的产生式，成功扩展返回true
+bool Parser::enlarge(std::list<std::vector<std::string>>& l)
+{
+	bool res = false;
+	std::vector<std::string> &org = *l.begin();
+	for (auto &pro : org)
+	{
+
+	}
+	return res;
+}
+
+
 
 //读取原始文法，保存到内存中
 void Parser::get_grammar()						
@@ -341,6 +448,7 @@ void Parser::Eliminate_left_recursion()
 //获取FIRST集合
 void Parser::get_FIRST()
 {
+	FIRST.clear();
 	for (auto &gm : final_grammar)
 	{
 		std::string &Vn = gm[0][0];
@@ -454,6 +562,10 @@ void Parser::get_FOLLOW()
 							if (FIRST[pro[i]].find("empty") == FIRST[pro[i]].end()) flag = false;
 						}
 					}
+					else
+					{
+						flag = false;
+					}
 				}
 			}
 		}
@@ -482,12 +594,15 @@ bool Parser::judge_LL1_grammar()
 		}
 		for (int i = 1; i < gm.size(); i++)
 		{
+			//整个产生式的FIRST集合
 			std::set<std::string> s1;
 			for (auto &v : gm[i])
 			{
+				//是非终结符
 				if (is_Vn[v])
 				{
 					s1.insert(FIRST[v].begin(), FIRST[v].end());
+					//里面不含empty
 					if (FIRST[v].find("empty") == FIRST[v].end()) break;
 				}
 				else
@@ -496,7 +611,7 @@ bool Parser::judge_LL1_grammar()
 					break;
 				}
 			}
-			if (flag && s1.find("empty") != s1.end()) res &= cmp_set(s1, FOLLOW[Vn]);
+			if (flag && s1.find("empty") == s1.end()) res &= cmp_set(s1, FOLLOW[Vn]);
 			for (int j = i + 1; j < gm.size(); j++)
 			{
 				std::set<std::string> s2;
@@ -542,7 +657,132 @@ void Parser::get_predict_table()
 //提取左公因子
 void Parser::get_left_common_factor()
 {
-	
+	for (auto &gm : grammar)
+	{
+		int sign = 2;
+		//reconsitution();
+		//get_FIRST();		
+	loop:
+		auto p = gm.begin();
+		p++;
+		//两层循环比较该非终结符所有的产生式
+		for (; p != gm.end(); p++)
+		{
+			
+			auto p2 = p;
+			for ( p2++; p2 != gm.end(); p2++)
+			{
+				
+				//把产生式内每个标识符存到vector里方便访问
+				std::vector<std::string> pro1, pro2;
+				string_to_vector(*p, pro1);
+				string_to_vector(*p2, pro2);
+				//判断两个产生式有没有左公因式
+				if (!has_common_prefix(pro1, pro2)) continue;
+				else
+				{	
+					//产生式相同，提取出来
+					if (pro1[0] == pro2[0])
+					{
+						std::vector<std::string> common;
+						int i = 0;
+						while (i < pro1.size() && i < pro2.size() && pro1[i] == pro2[i])
+						{
+							common.push_back(pro1[i]);
+							pro1[i] = "";
+							pro2[i] = "";
+							i++;
+						}
+						std::string common_fact;
+						vector_to_string(common_fact, common);
+						std::string npro1, npro2;
+						vector_to_string(npro1, pro1);
+						vector_to_string(npro2, pro2);
+						std::string nVn(gm.front());
+						nVn = nVn + '_' + (char)(sign + 48);
+						sign++;
+						//将有公因子的产生式删除
+						gm.erase(p);
+						gm.erase(p2);
+						//替换
+						gm.push_back(common_fact + ' ' + nVn);
+						//新的文法规则
+						std::list<std::string> tmp;
+						tmp.push_back(nVn);
+						if (npro1 != "")
+						{
+							tmp.push_back(npro1);
+						}
+						if (npro2 != "")
+						{
+							tmp.push_back(npro2);
+						}						
+						grammar.push_back(tmp);
+						is_Vn[nVn] = true;
+					}
+					//说明是该产生式的产生式有公因子,先展开
+					else
+					{
+						//展开p指向的产生式
+						if (is_Vn[pro1[0]])
+						{
+							for (auto & g: grammar)
+							{
+								if (g.front() == pro1[0])
+								{
+									std::string npro;
+									pro1[0] = "";
+									vector_to_string(npro, pro1);
+									gm.erase(p);
+									auto it = g.begin(); it++;
+									for (; it != g.end(); it++)
+									{
+										if (npro != "")
+										{
+											gm.push_back(*it + ' ' + npro);
+										}
+										else
+										{
+											gm.push_back(*it);
+										}
+									}
+									break;
+								}
+							}
+						}
+						//展开p2指向的产生式
+						if (is_Vn[pro2[0]])
+						{
+							for (auto & g : grammar)
+							{
+								if (g.front() == pro2[0])
+								{
+									std::string npro;
+									pro2[0] = "";
+									vector_to_string(npro, pro2);
+									gm.erase(p2);
+									auto it = g.begin(); it++;
+									for (; it != g.end(); it++)
+									{
+										if (npro != "")
+										{
+											gm.push_back(*it + ' ' + npro);
+										}
+										else
+										{
+											gm.push_back(*it);
+										}
+									}
+									break;
+								}
+							}
+						}
+					}	
+					goto loop;
+				}
+			}
+		}
+	}
 }
 
 //标记所有非终结符与终结符
@@ -586,6 +826,7 @@ void Parser::mark_empty()
 //文法不再改变，换个数据结构，方便后面使用
 void Parser::reconsitution()
 {
+	final_grammar.clear();
 	std::vector<std::vector<std::string>> tmp;
 	for (auto &gm : grammar)
 	{

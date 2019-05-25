@@ -14,7 +14,6 @@ public:
 	
 	void get_LL1_grammar();						//得到LL（1）文法
 	void Parse();
-	void test_print();
 	
 private:
 	std::list<std::list<std::string>> grammar;		//文法	
@@ -46,6 +45,13 @@ private:
 	std::set<std::string> cal_first(std::string Vn);
 	void print_FIRST();
 	void print_FOLLOW();
+	void string_to_vector(std::string &s, std::vector<std::string> &v);
+	void vector_to_string(std::string &s, std::vector<std::string> &v);
+	std::string common_prefix(std::string &gm1, std::string &gm2);
+	bool has_common_prefix(std::vector<std::string> &gm1, std::vector<std::string> &gm2);
+	std::set<std::string> get_left(std::vector<std::string> & tmp);		//返回左端，即first集，用于查看是否有左公因子
+	bool enlarge(std::list<std::vector<std::string>> &l);	//扩展该文法中的一个非终结符，成果扩展返回true
+
 };
 #endif // !Parser_h
 #pragma once

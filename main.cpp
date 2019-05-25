@@ -8,7 +8,6 @@ int main()
 	//s1.GetToken();
 	Parser p1;
 	p1.get_LL1_grammar();
-	p1.test_print();
 	//system("pause");
 	return 0;
 }
