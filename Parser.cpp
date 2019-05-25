@@ -29,18 +29,22 @@ void Parser::get_LL1_grammar()
 	if (!judge_LL1_grammar())
 	{
 		std::cout << "不是LL(1)文法" << std::endl;
-		system("pause");
+		//system("pause");
 	}
 	else
 	{
 		std::cout << "是LL(1)文法" << std::endl;
-		system("pause");
+		//system("pause");
 	}
+	get_predict_table();				//构造预测分析表
+	print_predictive_table();
+	
 }
 
 //解析token，构造语法树
 void Parser::Parse()
 {
+
 }
 
 //打印从文件中读取的文法
@@ -155,6 +159,7 @@ void Parser::print_FIRST()
 	outfile.close();
 }
 
+//打印各个文法的FOLLOW集合
 void Parser::print_FOLLOW()
 {
 	std::ofstream outfile("D://cminus//FOLLOW.txt");
@@ -167,6 +172,20 @@ void Parser::print_FOLLOW()
 			outfile << str << " | ";
 		}
 		outfile << "}" << std::endl << std::endl;
+	}
+	outfile.close();
+}
+
+//打印预测分析表
+void Parser::print_predictive_table()
+{
+	std::ofstream outfile("D://cminus//predictive_table.txt");
+	for (auto &p : predictive_table)
+	{
+		outfile << p.first.first << "\t" << p.first.second << "\t";
+		std::string pro;
+		vector_to_string(pro, p.second);
+		outfile << pro << std::endl << std::endl;
 	}
 	outfile.close();
 }
@@ -652,6 +671,52 @@ bool Parser::cmp_set(const std::set<std::string> s1, const std::set<std::string>
 //计算预测分析表
 void Parser::get_predict_table()
 {
+	/*
+	对于A -> α,将产生式加入pair(A, a∈FIRST(α))中
+	如果empty在FIRST(α)中，将产生式加入pair(A, b∈FOLLOW(A))中
+	*/
+	for (auto &gm : final_grammar)
+	{
+		auto &Vn = gm[0][0];
+		for (int i = 1; i < gm.size(); i++)
+		{
+			//gm[i]即为α
+			auto &pro = gm[i];
+			std::set<std::string> s;		//α的FIRST集合
+			bool flag = false;				//FIRST里有没有empty
+			for (auto &v : pro)
+			{
+				//是非终结符
+				if (is_Vn[v])
+				{
+					s.insert(FIRST[v].begin(), FIRST[v].end());
+					//里面不含empty
+					if (FIRST[v].find("empty") == FIRST[v].end()) break;
+				}
+				else
+				{
+					s.insert(v);
+					break;
+				}
+			}
+			if (s.find("empty") != s.end())
+			{
+				flag = true;
+			}
+			for (auto &Vt : s)
+			{
+				predictive_table[std::make_pair(Vn, Vt)] = pro;
+			}
+			if (flag)
+			{
+				for (auto &Vt : FOLLOW[Vn])
+				{
+					predictive_table[std::make_pair(Vn, Vt)] = pro;
+				}
+			}
+		}
+
+	}
 }
 
 //提取左公因子

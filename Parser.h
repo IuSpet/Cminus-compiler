@@ -21,6 +21,8 @@ private:
 	std::map<std::string, bool> can_produce_empty;
 	std::map<std::string, bool> is_Vn;
 	std::map<std::string, std::set<std::string>> FIRST, FOLLOW;
+	//预测分析表,结构为		predictive_table[非终结符号，终结符号] = 产生式
+	std::map<std::pair<std::string, std::string>, std::vector<std::string>> predictive_table;		
 	const char *grammar_file;
 	const char *token_file;
 	FILE* f;
@@ -45,6 +47,7 @@ private:
 	std::set<std::string> cal_first(std::string Vn);
 	void print_FIRST();
 	void print_FOLLOW();
+	void print_predictive_table();
 	void string_to_vector(std::string &s, std::vector<std::string> &v);
 	void vector_to_string(std::string &s, std::vector<std::string> &v);
 	std::string common_prefix(std::string &gm1, std::string &gm2);
