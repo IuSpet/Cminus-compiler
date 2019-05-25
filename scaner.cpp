@@ -8,6 +8,7 @@ void Scaner::GetToken()
 	char token[TOKENLENGTH];
 	memset(token, 0, TOKENLENGTH);
 	int tokenpos = 0;
+	std::ofstream outfile("D://cminus//token.txt");
 	while ((ch = GetNext()) != EOF)
 	{
 		//todo: 标识符，关键字，整型，浮点数运算符，注释，界符，字符串的dfa
@@ -335,25 +336,27 @@ void Scaner::GetToken()
 			case 5:
 			case 6:
 			case 7:
-				std::cout << "<" << "RESERVED WORD," << token << ">" << std::endl;
+				outfile << "<" << "RESERVED WORD," << token << ">" << std::endl;
+				//outfile << "<" << token << ">" << std::endl;
 				break;
 			case 27:
-				std::cout << "<" << "ID," << token << ">" << std::endl;
+				outfile << "<" << "ID," << token << ">" << std::endl;
 				break;
 			case 28:
-				std::cout << "<" << "INTEGER," << token << ">" << std::endl;
+				outfile << "<" << "NUM," << token << ">" << std::endl;
 				break;
 			case 29:
-				std::cout << "<" << "DOUBLE," << token << ">" << std::endl;
+				outfile << "<" << "DOUBLE," << token << ">" << std::endl;
 				break;
 			case 30:
-				std::cout << "<" << "STRING," << token << ">" << std::endl;
+				outfile << "<" << "STRING," << token << ">" << std::endl;
 				break;
 			case 31:
 			case 32:
 				break;
 			default:
-				std::cout << "<" << token << ">" << std::endl;
+				outfile << "<" << "SYMBOL," << token << ">" << std::endl;
+				//outfile << "<" << token << ">" << std::endl;
 			}
 			memset(token, 0, TOKENLENGTH);
 			tokenpos = 0;
@@ -362,7 +365,7 @@ void Scaner::GetToken()
 		}
 		if (state = 100) state = 0;
 	}
-
+	outfile.close();
 }
 
 bool Scaner::IsNum(const char c)

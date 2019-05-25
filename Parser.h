@@ -6,7 +6,13 @@
 #include"utlib.h"
 
 //extern const int BUFFERLENGTH;
-
+struct node
+{
+	node *Parent;
+	std::string type;
+	std::string value;
+	std::list<node*> sons;
+};
 class Parser
 {
 public:
@@ -14,6 +20,7 @@ public:
 	
 	void get_LL1_grammar();						//得到LL（1）文法
 	void Parse();
+	void test();
 	
 private:
 	std::list<std::list<std::string>> grammar;		//文法	
@@ -26,6 +33,9 @@ private:
 	const char *grammar_file;
 	const char *token_file;
 	FILE* f;
+	int filepos;
+	node root;										//语法树根
+
 
 	void get_grammar();								//获取初始文法
 	void Eliminate_left_recursion();				//消除左递归
@@ -54,7 +64,7 @@ private:
 	bool has_common_prefix(std::vector<std::string> &gm1, std::vector<std::string> &gm2);
 	std::set<std::string> get_left(std::vector<std::string> & tmp);		//返回左端，即first集，用于查看是否有左公因子
 	bool enlarge(std::list<std::vector<std::string>> &l);	//扩展该文法中的一个非终结符，成果扩展返回true
-
+	void get_token_value(std::string &token, std::string &value, std::string &type);
 };
 #endif // !Parser_h
 #pragma once

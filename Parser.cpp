@@ -1,5 +1,4 @@
 #include "Parser.h"
-#include<assert.h>
 const int BUFFERLENGTH = 4096;
 
 //构造函数指定文法文件和token文件
@@ -7,6 +6,11 @@ Parser::Parser()
 {
 	grammar_file = "D://cminus//grammar.txt";
 	token_file = "D://cminus//token.txt";
+	filepos = 0;
+	//语法树根
+	root.Parent = NULL;
+	root.type = "non-terminal";
+	root.value = "program";
 }
 
 void Parser::get_LL1_grammar()
@@ -44,7 +48,128 @@ void Parser::get_LL1_grammar()
 //解析token，构造语法树
 void Parser::Parse()
 {
+	std::ofstream outfile("D://cminus//matching_process.txt");
+	outfile << std::setiosflags(std::ios::left);
+	outfile << std::setw(30) << "Stack" << std::setw(20) << "Input" << "Action" << std::endl;
+	std::stack<std::string> match;
+	match.push("$");
+	match.push(root.value);
 
+	std::string type;
+	std::string value;
+	std::string out;
+	std::string token = get_next_token();
+	get_token_value(token, value, type);
+
+	while (true)
+	{
+		std::string top = match.top();
+		if (token == "$")
+		{
+			outfile << std::setw(30) << top << std::setw(20) << "$";
+			if (top == "$")
+			{
+				outfile << "accept" << std::endl;
+				match.pop();
+				break;
+			}
+			else
+			{
+				std::vector<std::string> &pro = predictive_table[std::make_pair(top, value)];
+				out.clear();
+				vector_to_string(out, pro);
+				outfile << "output: " << top << " -> " << out;
+				match.pop();
+				if (out == "empty")
+				{
+					outfile << std::endl;
+					continue;
+				}
+				for (int i = pro.size() - 1; i >= 0; i--)
+				{
+					match.push(pro[i]);
+				}
+				outfile << std::endl;
+				continue;
+			}
+		}		
+		out = top + " ... " + "$";
+		outfile << std::setw(30) << out;
+		//输入是保留字与符号
+		if (type == "RESERVED WORD" || type == "SYMBOL")
+		{
+			out = value + " ... " + "$";
+			outfile << std::setw(20) << out;
+			//输入和栈顶匹配，match，弹出栈顶
+			if (top == value)
+			{
+				outfile << "match";
+				match.pop();
+				token = get_next_token();
+				get_token_value(token, value, type);
+			}
+			//根据预测分析表，弹出栈顶，压入产生式
+			else
+			{
+				std::vector<std::string> &pro = predictive_table[std::make_pair(top, value)];
+				out.clear();
+				vector_to_string(out, pro);
+				outfile << "output: " << top << " -> " << out;
+				match.pop();
+				if (out == "empty")
+				{
+					outfile << std::endl;
+					continue;
+				}
+				for (int i = pro.size() - 1; i >= 0; i--)
+				{
+					match.push(pro[i]);
+				}
+			}
+		}
+		//输入是其它
+		else
+		{
+			out = type + " ... " + "$";
+			outfile << std::setw(20) << out;
+			//输入和栈顶匹配，match，弹出栈顶
+			if (top == type)
+			{
+				outfile << "match";
+				match.pop();
+				token = get_next_token();
+				get_token_value(token, value, type);
+			}
+			//根据预测分析表，弹出栈顶，压入产生式
+			else
+			{
+				std::vector<std::string> &pro = predictive_table[std::make_pair(top, type)];
+				out.clear();
+				vector_to_string(out, pro);
+				outfile << "output: " << top << " -> " << out;
+				match.pop();
+				if (out == "empty")
+				{
+					outfile << std::endl;
+					continue;
+				}
+				for (int i = pro.size() - 1; i >= 0; i--)
+				{
+					match.push(pro[i]);
+				}
+			}
+		}
+
+		outfile << std::endl;
+	}
+	outfile.close();
+}
+
+void Parser::test()
+{
+	std::string s;
+	while (s != "$") s = get_next_token();
+	system("pause");
 }
 
 //打印从文件中读取的文法
@@ -299,6 +424,31 @@ bool Parser::enlarge(std::list<std::vector<std::string>>& l)
 	return res;
 }
 
+void Parser::get_token_value(std::string & token, std::string & value, std::string & type)
+{
+	type.clear();
+	value.clear();
+	for (int i = 0; i < token.length(); i++)
+	{
+		auto c = token[i];
+		if (c == '<' && i == 0) continue;
+		else if (c == ',')
+		{
+			type = value;
+			value = "";
+			continue;
+		}
+		else if (c == '>' && i == token.length() - 1)
+		{
+			break;
+		}
+		else
+		{
+			value.push_back(c);
+		}
+	}
+}
+
 
 
 //读取原始文法，保存到内存中
@@ -543,8 +693,8 @@ void Parser::get_FOLLOW()
 			对于每条文法规则，不断寻找A -> αBβ结构，
 			将FIRST(β)中除empty外的所有符号加入FOLLOW(B)
 			*/
-			auto p = gm.begin(); p++;
-			for (; p != gm.end(); p++)
+			auto p = gm.begin();
+			for (p++; p != gm.end(); p++)
 			{
 				auto &pro = *p;
 				/*
@@ -560,26 +710,31 @@ void Parser::get_FOLLOW()
 					//判断是否是非终结符
 					if (is_Vn[pro[i]])
 					{
-						//将后半部分first加入follow
-						for (int j = i + 1; j < pro.size(); j++)
-						{
-							if (is_Vn[pro[j]])
-							{
-								FOLLOW[pro[i]].insert(FIRST[pro[j]].begin(), FIRST[pro[j]].end());
-								if (FIRST[pro[j]].find("empty") == FIRST[pro[j]].end()) break;
-							}
-							else
-							{
-								FOLLOW[pro[i]].insert(pro[j]);
-								break;
-							}
-						}
+						
 						if (flag)
 						{
 							//因为gm[0][0]的follow集合可能不全，故需要反复调用该函数补全各个集合
 							FOLLOW[pro[i]].insert(FOLLOW[gm[0][0]].begin(), FOLLOW[gm[0][0]].end());
 							if (FIRST[pro[i]].find("empty") == FIRST[pro[i]].end()) flag = false;
 						}
+						//将后半部分first加入follow
+						for (int j = i + 1; j < pro.size(); j++)
+						{
+							if (is_Vn[pro[j]])
+							{
+								FOLLOW[pro[i]].insert(FIRST[pro[j]].begin(), FIRST[pro[j]].end());
+								if (FIRST[pro[j]].find("empty") == FIRST[pro[j]].end())
+								{
+									flag = false;
+									break;
+								}
+							}
+							else
+							{
+								FOLLOW[pro[i]].insert(pro[j]);
+								break;
+							}
+						}	
 					}
 					else
 					{
@@ -778,10 +933,18 @@ void Parser::get_left_common_factor()
 						{
 							tmp.push_back(npro1);
 						}
+						else
+						{
+							tmp.push_back("empty");
+						}
 						if (npro2 != "")
 						{
 							tmp.push_back(npro2);
-						}						
+						}	
+						else
+						{
+							tmp.push_back("empty");
+						}
 						grammar.push_back(tmp);
 						is_Vn[nVn] = true;
 					}
@@ -925,5 +1088,18 @@ void Parser::reconsitution()
 //不断获取下一个token建立语法树
 std::string Parser::get_next_token()
 {
-	return std::string();
+	std::ifstream infile(token_file);
+	infile.seekg(filepos, std::ios::beg);
+	std::string str;
+	if (std::getline(infile, str))
+	{
+		filepos += str.length() + 2;
+		//std::cout << str << std::endl;
+		return str;
+	}
+	else
+	{
+		return std::string("$");
+	}
+	infile.close();
 }
