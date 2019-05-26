@@ -51,9 +51,18 @@ void Parser::Parse()
 	std::ofstream outfile("D://cminus//matching_process.txt");
 	outfile << std::setiosflags(std::ios::left);
 	outfile << std::setw(30) << "Stack" << std::setw(20) << "Input" << "Action" << std::endl;
-	std::stack<std::string> match;
-	match.push("$");
-	match.push(root.value);
+	std::stack<node*> match;
+	//std::stack<std::string> match;
+
+	node end;
+	end.Parent = NULL;
+	end.type = "";
+	end.value = "$";
+
+	match.push(&end);
+	match.push(&root);
+	//match.push("$");
+	//match.push(root.value);
 
 	std::string type;
 	std::string value;
@@ -63,104 +72,263 @@ void Parser::Parse()
 
 	while (true)
 	{
-		std::string top = match.top();
+		node top = *match.top();
+		match.pop();
+		//token读取完了
 		if (token == "$")
 		{
-			outfile << std::setw(30) << top << std::setw(20) << "$";
-			if (top == "$")
+			//匹配成功
+			if (match.size() == 1)
 			{
-				outfile << "accept" << std::endl;
+				outfile << std::setw(30) << "$" << std::setw(20) << "$" << "accept" << std::endl;
 				match.pop();
 				break;
 			}
 			else
 			{
-				std::vector<std::string> &pro = predictive_table[std::make_pair(top, value)];
+				//栈顶是非终结符，符号或保留字，匹配值存在value中
+				bool choose = true;
+				if (top.type == "RESERVED WORD" || top.type == "SYMBOL" || top.type == "non-terminal")
+				{
+					out = top.value + " ... " + "$";
+					outfile << std::setw(30) << out << std::setw(20) << "$" << "output" << top.value;
+				}
+				//栈顶是标识符或运算符，匹配值存在type中
+				else
+				{
+					out = top.type + " ... " + "$";
+					outfile << std::setw(30) << out << std::setw(20) << "$" << "output" << top.value;
+					choose = false;
+				}
+
+				//查表获取操作
+				std::vector<std::string> &pro = choose ? predictive_table[std::make_pair(top.value, value)] : predictive_table[std::make_pair(top.type, value)];
 				out.clear();
 				vector_to_string(out, pro);
-				outfile << "output: " << top << " -> " << out;
-				match.pop();
+				outfile << " -> " << out << std::endl;
+
+				//空的情况
 				if (out == "empty")
 				{
-					outfile << std::endl;
 					continue;
 				}
-				for (int i = pro.size() - 1; i >= 0; i--)
+
+				//往栈中压入新值,并连接节点建树
+				for (int i = pro.size() - 1; i >= 1; i--)
 				{
-					match.push(pro[i]);
+					node *son;
+					son = new node;
+					//新节点是原栈顶的子节点
+					top.sons.push_back(son);
+					son->Parent = &top;
+
+					//根据新压入符号不同构造节点
+					if (is_Vn[pro[i]])
+					{
+						son->type = "non-terminal";
+						son->value = pro[i];
+					}
+					else
+					{
+						if (pro[i] == "ID" || pro[i] == "NUM")
+						{
+							son->type = pro[i];
+							son->value = "";
+						}
+						else
+						{
+							if (pro[i][0] >= 'a' && pro[i][0] <= 'z')
+							{
+								son->type = "RESERVED WORD";
+								son->value = pro[i];
+							}
+							else
+							{
+								son->type = "SYMBOL";
+								son->value = pro[i];
+							}
+						}
+					}
+					match.push(son);
 				}
-				outfile << std::endl;
-				continue;
 			}
 		}		
-		out = top + " ... " + "$";
-		outfile << std::setw(30) << out;
-		//输入是保留字与符号
-		if (type == "RESERVED WORD" || type == "SYMBOL")
-		{
-			out = value + " ... " + "$";
-			outfile << std::setw(20) << out;
-			//输入和栈顶匹配，match，弹出栈顶
-			if (top == value)
-			{
-				outfile << "match";
-				match.pop();
-				token = get_next_token();
-				get_token_value(token, value, type);
-			}
-			//根据预测分析表，弹出栈顶，压入产生式
-			else
-			{
-				std::vector<std::string> &pro = predictive_table[std::make_pair(top, value)];
-				out.clear();
-				vector_to_string(out, pro);
-				outfile << "output: " << top << " -> " << out;
-				match.pop();
-				if (out == "empty")
-				{
-					outfile << std::endl;
-					continue;
-				}
-				for (int i = pro.size() - 1; i >= 0; i--)
-				{
-					match.push(pro[i]);
-				}
-			}
-		}
-		//输入是其它
 		else
 		{
-			out = type + " ... " + "$";
-			outfile << std::setw(20) << out;
-			//输入和栈顶匹配，match，弹出栈顶
-			if (top == type)
+			bool choose = true;
+			if (top.type == "RESERVED WORD" || top.type == "SYMBOL" || top.type == "non-terminal")
 			{
-				outfile << "match";
-				match.pop();
-				token = get_next_token();
-				get_token_value(token, value, type);
+				out = top.value + " ... " + "$";
+				outfile << std::setw(30) << out;
 			}
-			//根据预测分析表，弹出栈顶，压入产生式
+			//栈顶是标识符或运算符，匹配值存在type中
 			else
 			{
-				std::vector<std::string> &pro = predictive_table[std::make_pair(top, type)];
-				out.clear();
-				vector_to_string(out, pro);
-				outfile << "output: " << top << " -> " << out;
-				match.pop();
-				if (out == "empty")
+				out = top.type + " ... " + "$";
+				outfile << std::setw(30) << out;
+				choose = false;
+			}
+
+			//token是关键字或符号
+			if (type == "RESERVED WORD" || type == "SYMBOL")
+			{
+				out = value + " ... " + "$";
+				outfile << std::setw(30) << out;
+				//匹配，读取下一个token
+				if (top.value == value)
 				{
-					outfile << std::endl;
+					outfile << "match" << std::endl;
+					token.clear();
+					token = get_next_token();
+					get_token_value(token, value, type);
 					continue;
 				}
-				for (int i = pro.size() - 1; i >= 0; i--)
+				//不匹配，查表
+				else
 				{
-					match.push(pro[i]);
+					std::vector<std::string> &pro = choose ? predictive_table[std::make_pair(top.value, value)] : predictive_table[std::make_pair(top.type, value)];
+					if (choose)
+					{
+						outfile << "output: " << top.value << " -> ";
+					}
+					else
+					{
+						outfile << "output: " << top.type << " -> ";
+					}
+					out.clear();
+					vector_to_string(out, pro);
+					outfile << out << std::endl;
+
+					//空的情况
+					if (out == "empty")
+					{
+						continue;
+					}
+
+					//往栈中压入新值,并连接节点建树
+					for (int i = pro.size() - 1; i >= 0; i--)
+					{
+						node *son;
+						son = new node;
+						//新节点是原栈顶的子节点
+						top.sons.push_back(son);
+						son->Parent = &top;
+
+						//根据新压入符号不同构造节点
+						if (is_Vn[pro[i]])
+						{
+							son->type = "non-terminal";
+							son->value = pro[i];
+						}
+						else
+						{
+							if (pro[i] == "ID" || pro[i] == "NUM")
+							{
+								son->type = pro[i];
+								son->value = "";
+							}
+							else
+							{
+								//保留字
+								if (pro[i][0] >= 'a' && pro[i][0] <= 'z')
+								{
+									son->type = "RESERVED WORD";
+									son->value = pro[i];
+								}
+								//运算符
+								else
+								{
+									son->type = "SYMBOL";
+									son->value = pro[i];
+								}
+							}
+						}
+						match.push(son);
+					}
+				}
+			}
+			//token是标识符或数字
+			else
+			{
+				out = type + " ... " + "$";
+				outfile << std::setw(30) << out;
+				//匹配，节点加入值，读取下一个token
+				if (top.type == type)
+				{
+					outfile << "match" << std::endl;
+					top.value = value;
+					token.clear();
+					token = get_next_token();
+					get_token_value(token, value, type);
+					continue;
+				}
+				else
+				{
+					std::vector<std::string> &pro = choose ? predictive_table[std::make_pair(top.value, type)] : predictive_table[std::make_pair(top.type, type)];
+
+					if (choose)
+					{
+						outfile << "output: " << top.value << " -> ";
+					}
+					else
+					{
+						outfile << "output: " << top.type << " -> ";
+					}
+
+					out.clear();
+					vector_to_string(out, pro);
+					outfile << out << std::endl;
+
+					//空的情况
+					if (out == "empty")
+					{
+						continue;
+					}
+
+					//往栈中压入新值,并连接节点建树
+					for (int i = pro.size() - 1; i >= 0; i--)
+					{
+						node *son;
+						son = new node;
+						//新节点是原栈顶的子节点
+						top.sons.push_back(son);
+						son->Parent = &top;
+
+						//根据新压入符号不同构造节点
+						if (is_Vn[pro[i]])
+						{
+							son->type = "non-terminal";
+							son->value = pro[i];
+						}
+						//终结符，判断是否匹配
+						else
+						{
+							if (pro[i] == "ID" || pro[i] == "NUM")
+							{
+								son->type = pro[i];
+								son->value = "";
+							}
+							else
+							{
+								//保留字
+								if (pro[i][0] >= 'a' && pro[i][0] <= 'z')
+								{
+									son->type = "RESERVED WORD";
+									son->value = pro[i];
+								}
+								//运算符
+								else
+								{
+									son->type = "SYMBOL";
+									son->value = pro[i];
+								}
+							}
+						}
+						match.push(son);
+					}
 				}
 			}
 		}
-
-		outfile << std::endl;
 	}
 	outfile.close();
 }
@@ -428,6 +596,8 @@ void Parser::get_token_value(std::string & token, std::string & value, std::stri
 {
 	type.clear();
 	value.clear();
+	node *res;
+	res = new node;
 	for (int i = 0; i < token.length(); i++)
 	{
 		auto c = token[i];
@@ -435,7 +605,7 @@ void Parser::get_token_value(std::string & token, std::string & value, std::stri
 		else if (c == ',')
 		{
 			type = value;
-			value = "";
+			value.clear();
 			continue;
 		}
 		else if (c == '>' && i == token.length() - 1)

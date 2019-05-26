@@ -5,7 +5,7 @@
 #define Parser_h
 #include"utlib.h"
 
-//extern const int BUFFERLENGTH;
+//语法树的节点
 struct node
 {
 	node *Parent;
