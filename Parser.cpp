@@ -173,7 +173,7 @@ void Parser::Parse()
 			if (type == "RESERVED WORD" || type == "SYMBOL")
 			{
 				out = value + " ... " + "$";
-				outfile << std::setw(30) << out;
+				outfile << std::setw(20) << out;
 				//匹配，读取下一个token
 				if (top.value == value)
 				{
@@ -251,7 +251,7 @@ void Parser::Parse()
 			else
 			{
 				out = type + " ... " + "$";
-				outfile << std::setw(30) << out;
+				outfile << std::setw(20) << out;
 				//匹配，节点加入值，读取下一个token
 				if (top.type == type)
 				{
