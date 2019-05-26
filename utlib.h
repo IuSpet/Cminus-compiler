@@ -8,5 +8,7 @@
 #include<list>
 #include<set>
 #include<map>
+#include<stack>
 #include<fstream>
 #include<ostream>
+#include<iomanip>
