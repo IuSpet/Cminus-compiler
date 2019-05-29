@@ -23,8 +23,6 @@ void Parser::get_LL1_grammar()
 	Eliminate_left_recursion();			//去左递归
 	print_grammar1();
 	get_all_Vn();						//标记所有非终结符
-	//mark_empty();						//标记所有能产生空的产生式
-	//print_empty();
 	get_left_common_factor();			//消除左公因子
 	print_grammar2();
 	reconsitution();					//重构存储文法的数据结构
@@ -63,8 +61,6 @@ void Parser::Parse()
 
 	match.push(&end);
 	match.push(&root);
-	//match.push("$");
-	//match.push(root.value);
 
 	std::string type;
 	std::string value;
@@ -336,7 +332,7 @@ void Parser::Parse()
 	print_tree();
 }
 
-
+//打印语法树
 void Parser::print_tree()
 {
 	std::ofstream outfile("D://cminus//syntax_tree.txt");
@@ -409,6 +405,7 @@ void Parser::print_grammar2()
 	outfile.close();
 }
 
+//打印修改后的LL(1)文法
 void Parser::print_final_grammar()
 {
 	std::ofstream outfile("D://cminus//ll(1)grammar.txt");
@@ -587,6 +584,7 @@ void Parser::get_token_value(std::string & token, std::string & value, std::stri
 	}
 }
 
+//递归打印语法树，缩进表示参差
 void Parser::deep_print(std::ofstream & out, int r, node * t)
 {
 	for (int i = 0; i < r; i++)
@@ -963,6 +961,7 @@ bool Parser::judge_LL1_grammar()
 	return res;
 }
 
+//比较两个集合有没有交集
 bool Parser::cmp_set(const std::set<std::string> s1, const std::set<std::string> s2)
 {
 	int l1 = s1.size();
