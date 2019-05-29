@@ -1,7 +1,10 @@
-#include "scaner.h"
+//作者：IuSpet
+//作用：将c-源代码转化为token输出
+
+#include "scanner.h"
 
 
-void Scaner::GetToken()
+void Scanner::GetToken()
 {
 	char ch;
 	constexpr int TOKENLENGTH = 256;
@@ -15,7 +18,7 @@ void Scaner::GetToken()
 		while (state != 100)
 			switch (state)
 			{
-			case 0:
+			case 0:									//开始状态
 				if (ch == '+') state = 1;
 				else if (ch == '-') state = 2;
 				else if (ch == '*') state = 3;
@@ -185,33 +188,33 @@ void Scaner::GetToken()
 				state = 100;
 				syn = 22;
 				break;
-			case 16:
+			case 16:									//匹配到 "……
 				token[tokenpos++] = ch;
 				ch = GetNext();
 				if (ch == '"') state = 28;
 				else state = 16;
 				break;
-			case 28:
+			case 28:									//匹配到 "……"
 				token[tokenpos++] = ch;
 				state = 100;
 				syn = 30;
 				break;
-			case 17:
+			case 17:									//匹配到 ,
 				token[tokenpos++] = ch;
 				state = 100;
 				syn = 16;
 				break;
-			case 18:
+			case 18:									//匹配到字母
 				token[tokenpos++] = ch;
 				ch = GetNext();
-				if (IsLetter(ch) || IsNum(ch)) state = 18;
+				if (IsLetter(ch) || IsNum(ch)) state = 18;	//向前看一位还是数字或字母
 				else
 				{
 					Back();
-					state = 29;
+					state = 29;							//向前看一位不属于标识符
 				}
 				break;
-			case 29:
+			case 29:									//判断匹配到的标识符是不是关键字
 				if (strcmp(token, "if") == 0)
 				{
 					state = 100;
@@ -258,11 +261,11 @@ void Scaner::GetToken()
 					syn = 27;
 				}
 				break;
-			case 19:
+			case 19:									//匹配到的是数字
 				token[tokenpos++] = ch;
 				ch = GetNext();
-				if (IsNum(ch)) state = 19;
-				else if (ch == '.') state = 30;
+				if (IsNum(ch)) state = 19;				//下一位还是数字
+				else if (ch == '.') state = 30;			//下一位是.
 				else
 				{
 					Back();
@@ -270,7 +273,7 @@ void Scaner::GetToken()
 					syn = 28;
 				}
 				break;
-			case 30:
+			case 30:									//匹配到 digit D* .
 				token[tokenpos++] = ch;
 				ch = GetNext();
 				if (IsNum(ch)) state = 30;
@@ -282,7 +285,7 @@ void Scaner::GetToken()
 					syn = 29;
 				}
 				break;
-			case 31:
+			case 31:									//匹配到 digit D* . D* e
 				token[tokenpos++] = ch;
 				ch = GetNext();
 				if (IsNum(ch)) state = 32;
@@ -293,7 +296,7 @@ void Scaner::GetToken()
 					state = 99;
 				}
 				break;
-			case 32:
+			case 32:									//匹配到 digit D* . D* e
 				token[tokenpos++] = ch;
 				ch = GetNext();
 				if (IsNum(ch)) state = 32;
@@ -304,7 +307,7 @@ void Scaner::GetToken()
 					syn = 29;
 				}
 				break;
-			case 33:
+			case 33:									//匹配到 digit D* . D* e -
 				token[tokenpos++] = ch;
 				ch = GetNext();
 				if (IsNum(ch)) state = 32;
@@ -314,7 +317,7 @@ void Scaner::GetToken()
 					state = 99;
 				}
 				break;
-			case 99:
+			case 99:									//匹配中出错
 				std::cout << std::endl;
 				std::cout << "error" << std::endl;
 				std::cout << (int)ch << " " << ch << std::endl;
@@ -324,7 +327,7 @@ void Scaner::GetToken()
 				state = 100;
 				syn = -1;
 			}
-		if (state == 100 && syn != -1)
+		if (state == 100 && syn != -1)					//接受状态
 		{
 			switch (syn)
 			{
@@ -368,17 +371,17 @@ void Scaner::GetToken()
 	outfile.close();
 }
 
-bool Scaner::IsNum(const char c)
+bool Scanner::IsNum(const char c)
 {
 	return (c >= '0' && c <= '9');
 }
 
-bool Scaner::IsLetter(const char c)
+bool Scanner::IsLetter(const char c)
 {
 	return c >= 'a'&&c <= 'z' || c >= 'A'&&c <= 'Z';
 }
 
-char Scaner::GetNext()
+char Scanner::GetNext()
 {
 	if (buffer[pos] == 0)
 	{
@@ -389,7 +392,7 @@ char Scaner::GetNext()
 	return buffer[pos++];
 }
 
-void Scaner::Back()
+void Scanner::Back()
 {
 	pos -= 1;
 }
