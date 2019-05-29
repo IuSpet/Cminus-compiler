@@ -381,7 +381,7 @@ bool Scanner::IsLetter(const char c)
 	return c >= 'a'&&c <= 'z' || c >= 'A'&&c <= 'Z';
 }
 
-char Scanner::GetNext()
+/*char Scanner::GetNext()
 {
 	if (buffer[pos] == 0)
 	{
@@ -390,6 +390,27 @@ char Scanner::GetNext()
 		pos = 0;
 	}
 	return buffer[pos++];
+}*/
+char Scanner::GetNext()
+{
+	std::ifstream infile(sourcename);
+	infile.seekg(filepos, std::ios::beg);
+	if (pos < buffer.length())
+	{
+		return buffer[pos++];
+	}
+	else
+	{
+		if (std::getline(infile, buffer));
+		else
+		{
+			return EOF;
+		}
+		filepos += buffer.length() + 2;
+		pos = 0;
+		return buffer[pos++];
+	}
+	infile.close();
 }
 
 void Scanner::Back()
