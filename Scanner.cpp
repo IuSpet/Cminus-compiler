@@ -1,10 +1,10 @@
 //作者：IuSpet
 //作用：将c-源代码转化为token输出
 
-#include "scaner.h"
+#include "scanner.h"
 
 
-void Scaner::GetToken()
+void Scanner::GetToken()
 {
 	char ch;
 	constexpr int TOKENLENGTH = 256;
@@ -371,17 +371,17 @@ void Scaner::GetToken()
 	outfile.close();
 }
 
-bool Scaner::IsNum(const char c)
+bool Scanner::IsNum(const char c)
 {
 	return (c >= '0' && c <= '9');
 }
 
-bool Scaner::IsLetter(const char c)
+bool Scanner::IsLetter(const char c)
 {
 	return c >= 'a'&&c <= 'z' || c >= 'A'&&c <= 'Z';
 }
 
-char Scaner::GetNext()
+char Scanner::GetNext()
 {
 	if (buffer[pos] == 0)
 	{
@@ -392,7 +392,7 @@ char Scaner::GetNext()
 	return buffer[pos++];
 }
 
-void Scaner::Back()
+void Scanner::Back()
 {
 	pos -= 1;
 }
