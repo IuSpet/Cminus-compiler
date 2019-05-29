@@ -1,3 +1,6 @@
+//作者：IuSpet
+//作用：将一般文法转变为LL(1)文法并构建语法分析树
+
 #include "Parser.h"
 const int BUFFERLENGTH = 4096;
 
@@ -20,8 +23,8 @@ void Parser::get_LL1_grammar()
 	Eliminate_left_recursion();			//去左递归
 	print_grammar1();
 	get_all_Vn();						//标记所有非终结符
-	mark_empty();						//标记所有能产生空的产生式
-	print_empty();
+	//mark_empty();						//标记所有能产生空的产生式
+	//print_empty();
 	get_left_common_factor();			//消除左公因子
 	print_grammar2();
 	reconsitution();					//重构存储文法的数据结构
@@ -42,7 +45,6 @@ void Parser::get_LL1_grammar()
 	}
 	get_predict_table();				//构造预测分析表
 	print_predictive_table();
-	
 }
 
 //解析token，构造语法树
@@ -72,7 +74,7 @@ void Parser::Parse()
 
 	while (true)
 	{
-		node top = *match.top();
+		node &top = *match.top();
 		match.pop();
 		//token读取完了
 		if (token == "$")
@@ -331,13 +333,16 @@ void Parser::Parse()
 		}
 	}
 	outfile.close();
+	print_tree();
 }
 
-void Parser::test()
+
+void Parser::print_tree()
 {
-	std::string s;
-	while (s != "$") s = get_next_token();
-	system("pause");
+	std::ofstream outfile("D://cminus//syntax_tree.txt");
+	outfile << std::setiosflags(std::ios::left);
+	deep_print(outfile, 0, &root);
+	outfile.close();
 }
 
 //打印从文件中读取的文法
@@ -423,19 +428,6 @@ void Parser::print_final_grammar()
 	outfile.close();
 }
 
-//打印能产生empty的文法
-void Parser::print_empty()
-{
-	std::ofstream outfile("D://cminus//empty.txt");
-	for (const auto &gm : grammar)
-	{
-		const std::string &Vn = *gm.begin();
-		if (can_produce_empty[Vn]) outfile << Vn << std::endl;
-		else continue;
-	}
-	outfile.close();
-}
-
 //打印各个文法的FIRST集合
 void Parser::print_FIRST()
 {
@@ -514,17 +506,6 @@ void Parser::vector_to_string(std::string & s, std::vector<std::string>& v)
 	}
 }
 
-//计算两个文法产生式产生能识别的公共终结符
-std::string Parser::common_prefix(std::string & gm1, std::string & gm2)
-{
-	std::vector<std::string> pro1, pro2;
-	string_to_vector(gm1, pro1);
-	string_to_vector(gm2, pro2);
-	std::string common_fact;
-
-	return std::string();
-}
-
 //判断两个产生式有没有左公因子
 bool Parser::has_common_prefix(std::vector<std::string>& gm1, std::vector<std::string>& gm2)
 {
@@ -578,20 +559,7 @@ std::set<std::string> Parser::get_left(std::vector<std::string> & tmp)
 	return res;
 }
 
- 
-
-//将产生式中的第一个非终结符扩展为终结符，出现 | 往list中加入新的产生式，成功扩展返回true
-bool Parser::enlarge(std::list<std::vector<std::string>>& l)
-{
-	bool res = false;
-	std::vector<std::string> &org = *l.begin();
-	for (auto &pro : org)
-	{
-
-	}
-	return res;
-}
-
+//将token中的属性提取出来
 void Parser::get_token_value(std::string & token, std::string & value, std::string & type)
 {
 	type.clear();
@@ -619,7 +587,23 @@ void Parser::get_token_value(std::string & token, std::string & value, std::stri
 	}
 }
 
-
+void Parser::deep_print(std::ofstream & out, int r, node * t)
+{
+	for (int i = 0; i < r; i++)
+	{
+		out << "-";
+	}
+	std::string tmp;
+	tmp = "type: " + t->type;
+	out << std::setw(30) << tmp;
+	tmp = "value: " + t->value;
+	out << std::setw(30) << tmp;
+	out << std::endl;
+	for (auto &p : t->sons)
+	{
+		deep_print(out, r + 1, p);
+	}
+}
 
 //读取原始文法，保存到内存中
 void Parser::get_grammar()						
@@ -1198,26 +1182,6 @@ void Parser::get_all_Vn()
 	for (auto gm : grammar)
 	{
 		is_Vn[*gm.begin()] = true;
-	}
-}
-
-//标记能产生empty的文法
-void Parser::mark_empty()
-{
-	for (auto &gm : grammar)
-	{
-		auto it = gm.begin();
-		auto &Vn = *it;
-		it++;
-		can_produce_empty[Vn] = false;
-		for (; it != gm.end(); it++)
-		{
-			if (*it == "empty")
-			{
-				can_produce_empty[Vn] = true;
-				break;
-			}
-		}
 	}
 }
 

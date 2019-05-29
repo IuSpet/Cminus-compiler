@@ -1,10 +1,9 @@
 //作者：IuSpet
 //作用：将c-源代码转化为token输出
+
 #ifndef Scaner_h
 #define Scaner_h
 #include"utlib.h"
-
-//extern const int BUFFERLENGTH;
 
 class Scaner
 {
@@ -13,8 +12,8 @@ private:
 	int pos;						//缓冲区位置
 	FILE* source;
 	int syn;						//token类别
-	int state;
-	int tsss;
+	int state;						//DFA中的状态
+	//int tsss;
 	const int BUFFERLENGTH = 4096;
 public:
 	Scaner(const char* s)
@@ -27,7 +26,7 @@ public:
 		fgets(buffer, BUFFERLENGTH, source);
 		
 	}
-	void GetToken();
+	void GetToken();				//在DFA上转移，识别token
 	bool IsNum(const char c);
 	bool IsLetter(const char c);
 	char GetNext();					//获取下一个字符

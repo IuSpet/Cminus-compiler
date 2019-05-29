@@ -1,3 +1,6 @@
+//作者：IuSpet
+//作用：将c-源代码转化为token输出
+
 #include "scaner.h"
 
 

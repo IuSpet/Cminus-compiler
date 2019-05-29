@@ -9,7 +9,5 @@ int main()
 	Parser p1;
 	p1.get_LL1_grammar();
 	p1.Parse();
-	//p1.test();
-	//system("pause");
 	return 0;
 }
