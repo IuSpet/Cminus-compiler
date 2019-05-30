@@ -9,6 +9,7 @@ Parser::Parser()
 {
 	grammar_file = "D://cminus//grammar.txt";
 	token_file = "D://cminus//token.txt";
+	tokenfile.open(token_file);
 	filepos = 0;
 	//语法树根
 	root.Parent = NULL;
@@ -1221,18 +1222,13 @@ void Parser::reconsitution()
 //不断获取下一个token建立语法树
 std::string Parser::get_next_token()
 {
-	std::ifstream infile(token_file);
-	infile.seekg(filepos, std::ios::beg);
 	std::string str;
-	if (std::getline(infile, str))
+	if (std::getline(tokenfile, str))
 	{
-		filepos += str.length() + 2;
-		//std::cout << str << std::endl;
 		return str;
 	}
 	else
 	{
 		return std::string("$");
 	}
-	infile.close();
 }
