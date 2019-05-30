@@ -15,6 +15,7 @@ private:
 	int state;						//DFA中的状态
 	std::string sourcename;
 	int filepos;
+	std::ifstream infile;
 	//int tsss;
 	const int BUFFERLENGTH = 4096;
 public:
@@ -23,6 +24,7 @@ public:
 		//if (source = fopen(s, "r"));
 		//else exit(1);
 		sourcename = s;
+		infile.open(s);
 		pos = 0;
 		syn = -1;
 		state = 0;
@@ -35,6 +37,10 @@ public:
 	bool IsLetter(const char c);
 	char GetNext();					//获取下一个字符
 	void Back();					//向前看完后回溯
+	~Scanner()
+	{
+		infile.close();
+	}
 };
 
 

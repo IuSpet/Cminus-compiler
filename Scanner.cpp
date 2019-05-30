@@ -393,8 +393,8 @@ bool Scanner::IsLetter(const char c)
 }*/
 char Scanner::GetNext()
 {
-	std::ifstream infile(sourcename);
-	infile.seekg(filepos, std::ios::beg);
+	//std::ifstream infile(sourcename);
+	//infile.seekg(filepos, std::ios::beg);
 	if (pos < buffer.length())
 	{
 		return buffer[pos++];
@@ -409,11 +409,10 @@ char Scanner::GetNext()
 		{
 			return EOF;
 		}
-		filepos += buffer.length() + 2;
+		//filepos += buffer.length() + 1;
 		pos = 0;
 		return buffer[pos++];
 	}
-	infile.close();
 }
 
 void Scanner::Back()

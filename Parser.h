@@ -19,7 +19,12 @@ public:
 	Parser();
 	
 	void get_LL1_grammar();						//得到LL（1）文法
-	void Parse();								//解析，匹配文法与token，建树		
+	void Parse();								//解析，匹配文法与token，建树
+
+	~Parser()
+	{
+		tokenfile.close();
+	}
 	
 private:
 	std::list<std::list<std::string>> grammar;		//文法	
@@ -34,6 +39,7 @@ private:
 	FILE* f;
 	int filepos;
 	node root;										//语法树根
+	std::ifstream tokenfile;
 
 
 	void get_grammar();								//获取初始文法
