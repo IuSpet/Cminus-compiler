@@ -87,7 +87,7 @@ void Scanner::GetToken()
 			case 22:								//ƥ�䵽 /**
 				ch = GetNext();
 				if (ch == '*') state = 22;
-				if (ch == '/')state = 23;
+				else if (ch == '/')state = 23;
 				else state = 21;
 				break;
 			case 23:								//ƥ�䵽 /**/
@@ -401,7 +401,10 @@ char Scanner::GetNext()
 	}
 	else
 	{
-		if (std::getline(infile, buffer));
+		if (std::getline(infile, buffer))
+		{
+			buffer.push_back('\n');
+		}
 		else
 		{
 			return EOF;
